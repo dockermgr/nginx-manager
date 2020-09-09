@@ -3,6 +3,8 @@
 APPNAME="nginx-manager"
 DATADIR="/srv/docker/$APPNAME"
 
+systemctl disable -now apache2 httpd nginx >/dev/null 2>&1
+
 mkdir -p "$DATADIR"/{config,data,letsencrypt} && chmod -Rf 777 "$DATADIR"
 
 if docker ps -a | grep "$APPNAME" >/dev/null 2>&1; then
