@@ -42,3 +42,9 @@ docker run -d \
 -v $DATADIR/letsencrypt:/etc/letsencrypt \
 -v $DATADIR/config/config.json:/app/config/production.json \
 jc21/nginx-proxy-manager:2
+
+
+echo "
+Email:    admin@example.com
+Password: changeme
+"
