@@ -35,7 +35,7 @@ docker run -d \
 -e DISABLE_IPV6=true \
 -p 80:80 \
 -p 443:443 \
--p 81:81 \
+-p 8888:81 \
 -v $DATADIR/data:/data \
 -v $DATADIR/letsencrypt:/etc/letsencrypt \
 -v $DATADIR/config/config.json:/app/config/production.json \
