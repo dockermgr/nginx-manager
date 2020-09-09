@@ -3,12 +3,15 @@
 APPNAME="nginx-manager"
 DATADIR="/srv/docker/$APPNAME"
 
-mkdir -p "$DATADIR" && chmod -Rf 777 "$DATADIR"
+mkdir -p "$DATADIR"/{config,data,letsencrypt} && chmod -Rf 777 "$DATADIR"
 
 if docker ps -a | grep "$APPNAME" >/dev/null 2>&1; then
-docker pull jc21/nginx-proxy-manager:2 && docker restart $APPNAME
-else
+docker stop "$APPNAME"
+docker rm -f "$APPNAME"
+docker pull jc21/nginx-proxy-manager:2
+fi
 
+if [ ! -f "/srv/docker/nginx-manager/config/config.json" ]; then
 cat <<EOF | sudo tee > /srv/docker/nginx-manager/config/config.json
 {
   "database": {
@@ -22,6 +25,7 @@ cat <<EOF | sudo tee > /srv/docker/nginx-manager/config/config.json
   }
 }
 EOF
+fi
 
 docker run -d \
 --name="$APPNAME" \
@@ -36,4 +40,3 @@ docker run -d \
 -v $DATADIR/letsencrypt:/etc/letsencrypt \
 -v $DATADIR/config/config.json:/app/config/production.json \
 jc21/nginx-proxy-manager:2
-fi
