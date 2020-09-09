@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-mkdir -p /srv/docker/nginx-manager/{config,data,letsencrypt} && chmod -Rf 777 /srv/docker/nginx-manager
+APPNAME="nginx-manager"
+DATADIR="/srv/docker/$APPNAME"
+
+mkdir -p "$DATADIR" && chmod -Rf 777 "$DATADIR"
+
+if docker ps -a | grep "$APPNAME" >/dev/null 2>&1; then
+docker pull jc21/nginx-proxy-manager:2 && docker restart $APPNAME
+else
 
 cat <<EOF | sudo tee > /srv/docker/nginx-manager/config/config.json
 {
@@ -17,15 +24,16 @@ cat <<EOF | sudo tee > /srv/docker/nginx-manager/config/config.json
 EOF
 
 docker run -d \
---name=nginx-manager \
---hostname nginx-manager \
+--name="$APPNAME" \
+--hostname "$APPNAME" \
 --restart=always \
 --privileged \
 -e DISABLE_IPV6=true \
 -p 80:80 \
 -p 443:443 \
 -p 81:81 \
--v /srv/docker/nginx-manager/data:/data \
--v /srv/docker/nginx-manager/letsencrypt:/etc/letsencrypt \
--v /srv/docker/nginx-manager/config/config.json:/app/config/production.json \
+-v $DATADIR/data:/data \
+-v $DATADIR/letsencrypt:/etc/letsencrypt \
+-v $DATADIR/config/config.json:/app/config/production.json \
 jc21/nginx-proxy-manager:2
+fi
