@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 
 APPNAME="nginx-manager"
+DOCKER_HUB_URL="jc21/nginx-proxy-manager:2"
 
-systemctl disable -now apache2 httpd nginx >/dev/null 2>&1
+sudo systemctl disable -now apache2 httpd nginx >/dev/null 2>&1
 
-mkdir -p "$DATADIR"/{config,data,letsencrypt} && chmod -Rf 777 "$DATADIR"
+sudo mkdir -p "$DATADIR"/{config,data,letsencrypt}
+sudo chmod -Rf 777 "$DATADIR"
 
 if docker ps -a | grep "$APPNAME" >/dev/null 2>&1; then
-  docker stop "$APPNAME"
-  docker rm -f "$APPNAME"
-  docker pull jc21/nginx-proxy-manager:2
+  sudo docker stop "$APPNAME"
+  sudo docker rm -f "$APPNAME"
+  sudo docker pull "$DOCKER_HUB_URL"
+  sudo docker restart "$APPNAME"
 fi
 
 if [ ! -f "$DATADIR/config/config.json" ]; then
@@ -28,7 +31,7 @@ if [ ! -f "$DATADIR/config/config.json" ]; then
 EOF
 fi
 
-docker run -d \
+sudo docker run -d \
   --name="$APPNAME" \
   --hostname "$APPNAME" \
   --restart=always \
@@ -40,7 +43,7 @@ docker run -d \
   -v "$DATADIR/data":/data \
   -v "$DATADIR/letsencrypt":/etc/letsencrypt \
   -v $"DATADIR/config/config.json":/app/config/production.json \
-  jc21/nginx-proxy-manager:2
+  "$DOCKER_HUB_URL"
 
 echo "
 Email:    admin@example.com
