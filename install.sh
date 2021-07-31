@@ -92,11 +92,11 @@ else
       -e TZ=${TIMEZONE:-America/New_York} \
       -v "$DATADIR/data":/data:z \
       -v "$DATADIR/letsencrypt":/etc/letsencrypt:z \
-      -v $"DATADIR/config/config.json":/app/config/production.json:z \
+      -v $"$DATADIR/config/config.json":/app/config/production.json:z \
       -e DISABLE_IPV6=true \
       -p 80:80 \
       -p 443:443 \
-      -p 8888:81
+      -p 8888:81 \
     "$DOCKER_HUB_URL" &>/dev/null
   fi
 fi
