@@ -92,7 +92,7 @@ else
       -e TZ=${TIMEZONE:-America/New_York} \
       -v "$DATADIR/data":/data:z \
       -v "$DATADIR/letsencrypt":/etc/letsencrypt:z \
-      -v $"$DATADIR/config/config.json":/app/config/production.json:z \
+      -v "$DATADIR/config/config.json":/app/config/production.json:z \
       -e DISABLE_IPV6=true \
       -p 80:80 \
       -p 443:443 \
@@ -102,9 +102,11 @@ else
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if docker ps -a | grep -qs "$APPNAME"; then
+  printf_blue "Service is available at: http://$HOSTNAME"
+  printf_blue "admin panel is available at: http://$HOSTNAME:8888"
+  printf_blue "Email:        admin@example.com"
+  printf_blue "Password:     changeme"
   printf_green "Successfully setup nginx-manager"
-  printf_blue "Email:      admin@example.com"
-  printf_blue "Password:   changeme"
 else
   printf_return "Could not setup nginx-manager"
 fi
