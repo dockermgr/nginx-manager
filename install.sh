@@ -80,7 +80,6 @@ if [ -f "$INSTDIR/docker-compose.yml" ]; then
   fi
 else
   if docker ps -a | grep -qs "$APPNAME"; then
-    sudo docker rm "$APPNAME" -f &>/dev/null
     sudo docker pull "$DOCKER_HUB_URL" &>/dev/null
     sudo docker restart "$APPNAME" &>/dev/null
   else
