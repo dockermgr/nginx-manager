@@ -106,9 +106,8 @@ if docker ps -a | grep -qs "$APPNAME"; then
   printf_blue "admin panel is available at: http://$HOSTNAME:8888"
   printf_blue "Email:        admin@example.com"
   printf_blue "Password:     changeme"
-  printf_green "Successfully setup nginx-manager"
 else
-  printf_return "Could not setup nginx-manager"
+  false
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # End script
