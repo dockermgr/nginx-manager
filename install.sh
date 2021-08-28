@@ -77,23 +77,22 @@ if [ -f "$INSTDIR/docker-compose.yml" ] && cmd_exists docker-compose; then
   fi
 else
   if docker ps -a | grep -qsw "$APPNAME"; then
-    __sudo docker pull "$DOCKER_HUB_URL" &>/dev/null
-    __sudo docker restart "$APPNAME" &>/dev/null
-  else
-    __sudo docker run -d \
-      --name="$APPNAME" \
-      --hostname "$APPNAME" \
-      --restart=unless-stopped \
-      --privileged \
-      -e TZ="$NGINX_MANAGER_SERVER_TIMEZONE" \
-      -v "$DATADIR/data":/data:z \
-      -v "$DATADIR/config":/config:z \
-      -v "$DATADIR/letsencrypt":/etc/letsencrypt:z \
-      -p 80:80 \
-      -p 443:443 \
-      -p "$NGINX_MANAGER_SERVER_PORT":443 \
-      "$DOCKER_HUB_URL" &>/dev/null
+    __sudo docker stop "$APPNAME" &>/dev/null
+    __sudo docker rm -f "$APPNAME" &>/dev/null
   fi
+  __sudo docker run -d \
+    --name="$APPNAME" \
+    --hostname "$APPNAME" \
+    --restart=unless-stopped \
+    --privileged \
+    -e TZ="$NGINX_MANAGER_SERVER_TIMEZONE" \
+    -v "$DATADIR/data":/data:z \
+    -v "$DATADIR/config":/config:z \
+    -v "$DATADIR/letsencrypt":/etc/letsencrypt:z \
+    -p 80:80 \
+    -p 443:443 \
+    -p "$NGINX_MANAGER_SERVER_PORT":443 \
+    "$DOCKER_HUB_URL" &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if docker ps -a | grep -qs "$APPNAME"; then
