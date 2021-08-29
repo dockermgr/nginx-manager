@@ -17,10 +17,10 @@ if [[ "$1" == "--debug" ]]; then shift 1 && set -xo pipefail && export SCRIPT_OP
 # @Copyright     : Copyright: (c) 2021 Jason Hempstead, Casjays Developments
 # @Created       : Saturday, Aug 28, 2021 20:20 EDT
 # @File          : nginx-manager
-# @Description   : 
-# @TODO          : 
-# @Other         : 
-# @Resource      : 
+# @Description   :
+# @TODO          :
+# @Other         :
+# @Resource      :
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Import functions
 CASJAYSDEVDIR="${CASJAYSDEVDIR:-/usr/local/share/CasjaysDev/scripts}"
@@ -46,8 +46,10 @@ user_installdirs
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define extra functions
 __sudo() { if sudo -n true; then eval sudo "$*"; else eval "$*"; fi; }
-__enable_ssl() { [[ "$SERVER_SSL" = "yes" ]] && [[ "$SERVER_SSL" = "true" ]] && return 0 || return 1; }
+__sudo_root() { sudo -n true && ask_for_password true && eval sudo "$*" || return 1; }
 __ssl_certs() { [ -f "${1:-$SERVER_SSL_CRT}" ] && [ -f "${2:-SERVER_SSL_KEY}" ] && return 0 || return 1; }
+__enable_ssl() { { [[ "$SERVER_SSL" = "yes" ]] || [[ "$SERVER_SSL" = "true" ]]; } && return 0 || return 1; }
+__port_not_in_use() { [[ -d "/etc/nginx/vhosts.d" ]] && grep -Rsq "${1:-$SERVER_PORT}" /etc/nginx/vhosts.d && return 0 || return 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Make sure the scripts repo is installed
 scripts_check
@@ -55,8 +57,8 @@ REPO_BRANCH="${GIT_REPO_BRANCH:-master}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Defaults
 APPNAME="nginx-manager"
-APPDIR="$HOME/.local/share/docker/nginx-manager"
-DATADIR="$HOME/.local/share/docker/nginx-manager/files"
+APPDIR="$HOME/.local/share/srv/docker/nginx-manager"
+DATADIR="$HOME/.local/share/srv/docker/nginx-manager/files"
 INSTDIR="$HOME/.local/share/dockermgr/docker/nginx-manager"
 REPO="${DOCKERMGRREPO:-https://github.com/dockermgr}/nginx-manager"
 REPORAW="$REPO/raw/$REPO_BRANCH"
@@ -64,17 +66,19 @@ APPVERSION="$(__appversion "$REPORAW/version.txt")"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup plugins
 HUB_URL="jc21/nginx-proxy-manager:2"
-SERVER_HOST="${SERVER_HOST:-$(hostname -f 2>/dev/null)}"
-SERVER_PORT="${SERVER_PORT:-8080}"
+SERVER_IP="${CURRIP4:-127.0.0.1}"
+SERVER_HOST="$(hostname -f 2>/dev/null || echo localhost)"
+SERVER_PORT="${SERVER_PORT:-80}"
 SERVER_PORT_INT="${SERVER_PORT_INT:-80}"
-SERVER_PORT_SSL="${SERVER_PORT_SSL:-8443}"
-SERVER_PORT_SSL_INT="${SERVER_PORT_SSL_INT:-443}"
-SERVER_PORT_ADM_PORT="${SERVER_PORT_SSL:-8888}"
-SERVER_PORT_ADM_PORT_INT="${SERVER_PORT_SSL_INT:-81}"
+SERVER_PORT_ADMIN="${SERVER_PORT_SSL:-8888}"
+SERVER_PORT_ADMIN_INT="${SERVER_PORT_SSL_INT:-8888}"
+SERVER_PORT_OTHER="${SERVER_PORT_SSL:-443}"
+SERVER_PORT_OTHER_INT="${SERVER_PORT_SSL_INT:-443}"
 SERVER_TIMEZONE="${TZ:-${TIMEZONE:-America/New_York}}"
 SERVER_SSL="${SERVER_SSL:-false}"
 SERVER_SSL_CRT="/etc/ssl/CA/CasjaysDev/certs/localhost.crt"
 SERVER_SSL_KEY="/etc/ssl/CA/CasjaysDev/private/localhost.key"
+SERVER_DISABLE_IPV6=${SERVER_DISABLE_IPV6:-true}
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Require a version higher than
 dockermgr_req_version "$APPVERSION"
@@ -116,7 +120,11 @@ if am_i_online; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Copy over data files - keep the same stucture as -v dataDir/mnt:/mount
-[[ -d "$INSTDIR/dataDir" ]] && cp -Rf "$INSTDIR/dataDir/*" "$DATADIR/"
+if [[ -d "$INSTDIR/dataDir" ]] && [[ ! -f "$DATADIR/.installed" ]]; then
+  printf_blue "Copying files to $DATADIR"
+  cp -Rf "$INSTDIR/dataDir/." "$DATADIR/"
+  touch "$DATADIR/.installed"
+fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Main progam
 if [ -f "$INSTDIR/docker-compose.yml" ] && cmd_exists docker-compose; then
@@ -131,37 +139,38 @@ else
     __sudo docker stop "$APPNAME" &>/dev/null
     __sudo docker rm -f "$APPNAME" &>/dev/null
   fi
-  if __enable_ssl && __ssl_certs "$SERVER_SSL_CRT" "$SERVER_SSL_KEY"; then
-    ## SSL
   __sudo docker run -d \
     --name="$APPNAME" \
     --hostname "$SERVER_HOST" \
     --restart=unless-stopped \
     --privileged \
     -e TZ="$SERVER_TIMEZONE" \
-    -v "$DATADIR/data":/data:z \
-    -v "$DATADIR/config":/config:z \
-    -v "$DATADIR/letsencrypt":/etc/letsencrypt:z \
-    -e DISABLE_IPV6=true \
+    -e DISABLE_IPV6=$SERVER_DISABLE_IPV6 \
+    -v "$DATADIR/data":/data \
+    -v "$DATADIR/config":/config \
+    -v "$DATADIR/letsencrypt":/etc/letsencrypt \
     -p $SERVER_PORT:$SERVER_PORT_INT \
-    -p $SERVER_PORT_SSL:$SERVER_PORT_SSL_INT \
-    -p $SERVER_PORT_ADM_PORT:$SERVER_PORT_ADM_PORT_INT \
+    -p $SERVER_PORT_OTHER:$SERVER_PORT_OTHER_INT \
+    -p $SERVER_PORT_ADMIN:$SERVER_PORT_ADMIN_INT \
     "$HUB_URL" &>/dev/null
-  else
-  __sudo docker run -d \
-    --name="$APPNAME" \
-    --hostname "$SERVER_HOST" \
-    --restart=unless-stopped \
-    --privileged \
-    -e TZ="$SERVER_TIMEZONE" \
-    -v "$DATADIR/data":/data:z \
-    -v "$DATADIR/config":/config:z \
-    -v "$DATADIR/letsencrypt":/etc/letsencrypt:z \
-    -e DISABLE_IPV6=true \
-    -p $SERVER_PORT:$SERVER_PORT_INT \
-    -p $SERVER_PORT_SSL:$SERVER_PORT_SSL_INT \
-    -p $SERVER_PORT_ADM_PORT:$SERVER_PORT_ADM_PORT_INT \
-    "$HUB_URL" &>/dev/null
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Copy over data files - keep the same stucture as -v dataDir/mnt:/mount
+if [[ -d "$INSTDIR/dataDir" ]] && [[ ! -f "$DATADIR/.installed" ]]; then
+  printf_blue "Copying files to $DATADIR"
+  cp -Rf "$INSTDIR/dataDir/." "$DATADIR/"
+  touch "$DATADIR/.installed"
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Install nginx proxy
+if [[ ! -f "/etc/nginx/vhosts.d/$APPNAME.conf" ]] && [[ -f "$APPDIR/nginx/proxy.conf" ]]; then
+  if __port_not_in_use "$SERVER_PORT"; then
+    printf_green "Copying the nginx configuration"
+    __sudo_root cp -Rf "$APPDIR/nginx/proxy.conf" "/etc/nginx/vhosts.d/$APPNAME.conf"
+    sed -i "s|REPLACE_APPNAME|$APPNAME|g" "/etc/nginx/vhosts.d/$APPNAME.conf"
+    sed -i "s|REPLACE_SERVER_HOST|$SERVER_HOST|g" "/etc/nginx/vhosts.d/$APPNAME.conf"
+    sed -i "s|REPLACE_SERVER_PORT|$SERVER_PORT|g" "/etc/nginx/vhosts.d/$APPNAME.conf"
+    __sudo_root systemctl reload nginx
   fi
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -179,6 +188,7 @@ dockermgr_install_version
 if docker ps -a | grep -qs "$APPNAME"; then
   printf_blue "DATADIR in $DATADIR"
   printf_cyan "Installed to $INSTDIR"
+  printf_blue "Service is running on: $SERVER_IP:$SERVER_PORT"
   printf_blue "HTTP is available at: http://$SERVER_HOST:$SERVER_PORT"
   printf_blue "HTTPS is available at: https://$SERVER_HOST:$SERVER_PORT_SSL"
   printf_blue "Admin is available at: http://$SERVER_HOST:$SERVER_PORT_ADM_PORT"
