@@ -185,6 +185,8 @@ execute "run_postinst" "Running post install scripts"
 dockermgr_install_version
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # run exit function
+run_exit
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if docker ps -a | grep -qs "$APPNAME"; then
   printf_blue "DATADIR in $DATADIR"
   printf_cyan "Installed to $INSTDIR"
@@ -195,7 +197,6 @@ if docker ps -a | grep -qs "$APPNAME"; then
 else
   printf_error "Something seems to have gone wrong with the install"
 fi
-run_exit
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # End application
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
