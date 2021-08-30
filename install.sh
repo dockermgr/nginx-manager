@@ -185,8 +185,6 @@ execute "run_postinst" "Running post install scripts"
 dockermgr_install_version
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # run exit function
-run_exit
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if docker ps -a | grep -qs "$APPNAME"; then
   printf_blue "DATADIR in $DATADIR"
   printf_cyan "Installed to $INSTDIR"
@@ -194,9 +192,11 @@ if docker ps -a | grep -qs "$APPNAME"; then
   printf_blue "HTTP is available at: http://$SERVER_HOST:$SERVER_PORT"
   printf_blue "HTTPS is available at: https://$SERVER_HOST:$SERVER_PORT_SSL"
   printf_blue "Admin is available at: http://$SERVER_HOST:$SERVER_PORT_ADM_PORT"
+  rm -Rf "$DATADIR/dataDir"/*/.gitkeep &>/dev/null
 else
   printf_error "Something seems to have gone wrong with the install"
 fi
+run_exit
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # End application
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
