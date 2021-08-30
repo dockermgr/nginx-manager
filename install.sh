@@ -154,9 +154,9 @@ else
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config/production.json":/app/config/production.json \
     -v "$DATADIR/letsencrypt":/etc/letsencrypt \
-    -p $SERVER_LISTEN:$SERVER_PORT:$SERVER_PORT_INT \
-    -p $SERVER_LISTEN:$SERVER_PORT_OTHER:$SERVER_PORT_OTHER_INT \
-    -p $SERVER_LISTEN:$SERVER_PORT_ADMIN:$SERVER_PORT_ADMIN_INT \
+    -p $SERVER_PORT:$SERVER_PORT_INT \
+    -p $SERVER_PORT_OTHER:$SERVER_PORT_OTHER_INT \
+    -p $SERVER_PORT_ADMIN:$SERVER_PORT_ADMIN_INT \
     "$HUB_URL" &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
