@@ -152,7 +152,7 @@ else
     -e TZ="$SERVER_TIMEZONE" \
     -e DISABLE_IPV6=$SERVER_DISABLE_IPV6 \
     -v "$DATADIR/data":/data \
-    -v "$DATADIR/config/production.json":/app/config/production.json \
+    -v "$DATADIR/config":/app/config \
     -v "$DATADIR/letsencrypt":/etc/letsencrypt \
     -p $SERVER_PORT:$SERVER_PORT_INT \
     -p $SERVER_PORT_OTHER:$SERVER_PORT_OTHER_INT \
