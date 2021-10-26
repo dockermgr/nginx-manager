@@ -189,9 +189,7 @@ fi
 # run post install scripts
 run_postinst() {
   dockermgr_run_post
-  if ! grep -q "$APPNAME" /etc/hosts; then
-    echo "$SERVER_LISTEN     $APPNAME.local" | sudo tee -a /etc/hosts &>/dev/null
-  fi
+  grep -sq "$APPNAME.local" /etc/hosts || { [[ -n "$SERVER_PORT_INT" ]] && echo "$SERVER_LISTEN     $APPNAME.local" | sudo tee -a /etc/hosts &>/dev/null; }
 }
 #
 execute "run_postinst" "Running post install scripts"
