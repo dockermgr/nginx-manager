@@ -70,7 +70,7 @@ NGINX_HTTP="${NGINX_HTTP:-80}"
 NGINX_HTTPS="${NGINX_HTTPS:-443}"
 SERVER_IP="${CURRIP4:-127.0.0.1}"
 SERVER_LISTEN="${SERVER_LISTEN:-$SERVER_IP}"
-SERVER_HOST="$(hostname -f 2>/dev/null || echo localhost)"
+SERVER_HOST="${APPNAME}.$(hostname -d 2>/dev/null | grep '^' || echo local)"
 SERVER_PORT="${SERVER_PORT:-80}"
 SERVER_PORT_INT="${SERVER_PORT_INT:-80}"
 SERVER_PORT_ADMIN="${SERVER_PORT_ADMIN:-8888}"
@@ -81,7 +81,7 @@ SERVER_TIMEZONE="${TZ:-${TIMEZONE:-America/New_York}}"
 SERVER_SSL_CRT="/etc/ssl/CA/CasjaysDev/certs/localhost.crt"
 SERVER_SSL_KEY="/etc/ssl/CA/CasjaysDev/private/localhost.key"
 SERVER_DISABLE_IPV6=${SERVER_DISABLE_IPV6:-true}
-[[ -f /etc/ssl/CA/CasjaysDev/certs/localhost.crt ]] && [[ -f /etc/ssl/CA/CasjaysDev/private/localhost.key ]] && SERVER_SSL="true" 
+[[ -f "$SERVER_SSL_CRT" ]] && [[ -f "$SERVER_SSL_KEY" ]] && SERVER_SSL="true"
 [[ -n "$SERVER_SSL" ]] || SERVER_SSL="${SERVER_SSL:-false}"
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -189,7 +189,16 @@ fi
 # run post install scripts
 run_postinst() {
   dockermgr_run_post
-  grep -sq "$APPNAME.local" /etc/hosts || { [[ -n "$SERVER_PORT_INT" ]] && echo "$SERVER_LISTEN     $APPNAME.local" | sudo tee -a /etc/hosts &>/dev/null; }
+  if ! grep -sq "$SERVER_HOST" /etc/hosts; then
+    if [[ -n "$SERVER_PORT_INT" ]]; then
+      if [[ $(hostname -d 2>/dev/null | grep '^') = 'local' ]]; then
+        echo "$SERVER_LISTEN     $APPNAME.local" | sudo tee -a /etc/hosts &>/dev/null
+      else
+        echo "$SERVER_LISTEN     $APPNAME.local" | sudo tee -a /etc/hosts &>/dev/null
+        echo "$SERVER_LISTEN     $SERVER_HOST" | sudo tee -a /etc/hosts &>/dev/null
+      fi
+    fi
+  fi
 }
 #
 execute "run_postinst" "Running post install scripts"
