@@ -78,12 +78,9 @@ SERVER_PORT_ADMIN_INT="${SERVER_PORT_ADMIN_INT:-81}"
 SERVER_PORT_OTHER="${SERVER_PORT_OTHER:-443}"
 SERVER_PORT_OTHER_INT="${SERVER_PORT_OTHER_INT:-443}"
 SERVER_TIMEZONE="${TZ:-${TIMEZONE:-America/New_York}}"
-SERVER_SSL_CRT="/etc/ssl/CA/CasjaysDev/certs/localhost.crt"
-SERVER_SSL_KEY="/etc/ssl/CA/CasjaysDev/private/localhost.key"
-SERVER_DISABLE_IPV6=${SERVER_DISABLE_IPV6:-true}
-[[ -f "$SERVER_SSL_CRT" ]] && [[ -f "$SERVER_SSL_KEY" ]] && SERVER_SSL="true"
-[[ -n "$SERVER_SSL" ]] || SERVER_SSL="${SERVER_SSL:-false}"
-
+SERVER_SSLDIR="${SERVER_SSLDIR:-/etc/ssl/CA/CasjaysDev}"
+SERVER_SSL_CRT="${SERVER_SSL_CRT:-$SERVER_SSLDIR/certs/localhost.crt}"
+SERVER_SSL_KEY="${SERVER_SSL_KEY:-$SERVER_SSLDIR/private/localhost.key}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Require a version higher than
 dockermgr_req_version "$APPVERSION"
